@@ -7,11 +7,11 @@ export const register = async (req: Request, res: Response) => {
 
     const { user, token} = await registerUser(email, password);
 
-    delete user.password; 
+    const { password: _, ...safeUser } = user;
 
     res.status(201).json({
       message: "User created successfully",
-      user,
+      user: safeUser,
       token,
     });
   } catch (error: any) {
@@ -25,11 +25,12 @@ export const login = async (req: Request, res: Response) => {
 
     const data = await loginUser(email, password);
 
-    delete data.user.password;
+    const { password: _, ...safeUser } = data.user;
 
     res.json({
       message: "Login successful",
       ...data,
+      user: safeUser,
     });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
