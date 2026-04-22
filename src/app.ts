@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRouter from "./routes/auth.routes.js";
 import projectRouter from "./routes/project.routes.js";
+import endpointRouter from "./routes/endpoint.routes.js";
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRouter);
 app.use("/api/projects", projectRouter);
+app.use("/api/projects", endpointRouter);
 
 app.get("/", (req, res) => {
   res.send("PulseTrace API is running 🚀");

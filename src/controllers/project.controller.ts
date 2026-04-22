@@ -24,7 +24,8 @@ export const createProjectController = async (req: Request, res: Response) => {
       project,
     });
   } catch (error: any) {
-    res.status(400).json({
+    const status = error.message.includes("already exists") ? 409 : 400;
+    res.status(status).json({
       message: error.message,
     });
   }

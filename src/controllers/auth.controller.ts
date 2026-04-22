@@ -15,7 +15,8 @@ export const register = async (req: Request, res: Response) => {
       token,
     });
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    const status = error.message === "User already exists" ? 409 : 400;
+    res.status(status).json({ message: error.message });
   }
 };
 
@@ -33,6 +34,7 @@ export const login = async (req: Request, res: Response) => {
       user: safeUser,
     });
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    const status = error.message === "Invalid credentials" ? 401 : 400;
+    res.status(status).json({ message: error.message });
   }
 };
