@@ -5,6 +5,7 @@ import authRouter from "./routes/auth.routes.js";
 import projectRouter from "./routes/project.routes.js";
 import endpointRouter from "./routes/endpoint.routes.js";
 import logRouter from "./routes/logs.routes.js";
+import statsRouter from "./routes/stats.routes.js";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/projects", projectRouter);
 app.use("/api/projects", endpointRouter);
+app.use("/api/projects", statsRouter);
 app.use("/api/logs", logRouter);
 
 app.get("/", (req, res) => {

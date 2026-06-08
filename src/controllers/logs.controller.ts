@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { logResponse } from "../services/logs.service.js";
 
-
 export const logResponseController = async (req: Request, res: Response) => {
     try {
 

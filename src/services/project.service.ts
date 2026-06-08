@@ -44,15 +44,29 @@ export const getProjects = async (userId: string) => {
     return await prisma.project.findMany({
         where: {
             userId: userId,
-        }
-    })
-}
+        },
+        include: {
+            apiKeys: {
+                select: {
+                    key: true,
+                },
+            },
+        },
+    });
+};
 
 export const getProjectById = async (projectId: string, userId: string) => {
     const project = await prisma.project.findFirst({
         where: {
             id: projectId,
             userId,
+        },
+        include: {
+            apiKeys: {
+                select: {
+                    key: true,
+                },
+            },
         },
     });
 
@@ -80,4 +94,51 @@ export const deleteProject = async (projectId: string, userId: string) => {
             id: projectId,
         },
     });
+};
+
+export const getProjectLogs = async (projectId: string, userId: string, page: number = 1, limit: number = 10) => {
+
+    await getProjectById(projectId, userId);
+
+    const skip = (page - 1) * limit;
+
+    const logs = await prisma.apiLog.findMany({
+        where: {
+            endpoint: {
+                projectId,
+            },
+        },
+        include: {
+            endpoint: {
+                select: {
+                    name: true,
+                    path: true,
+                    method: true,
+                },
+            },
+        },
+        orderBy: {
+            timestamp: "desc",
+        },
+        skip,
+        take: limit,
+    });
+
+    const totalLogs = await prisma.apiLog.count({
+        where: {
+            endpoint: {
+                projectId,
+            },
+        },
+    });
+
+    return {
+        logs,
+        pagination: {
+            total: totalLogs,
+            page,
+            limit,
+            totalPages: Math.ceil(totalLogs / limit),
+        },
+    };
 };

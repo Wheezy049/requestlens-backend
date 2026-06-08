@@ -4,6 +4,7 @@ import {
   getProjects,
   getProjectById,
   deleteProject,
+  getProjectLogs,
 } from "../services/project.service.js";
 
 export const createProjectController = async (req: Request, res: Response) => {
@@ -88,6 +89,30 @@ export const deleteProjectController = async (
   } catch (error: any) {
     res.status(404).json({
       message: error.message,
+    });
+  }
+};
+
+export const getProjectLogsController = async (
+  req: Request<{ id: string }>,
+  res: Response
+) => {
+  try {
+    const projectId = req.params.id;
+    const userId = (req as any).user.userId;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const result = await getProjectLogs(projectId, userId, page, limit);
+
+    res.status(200).json({
+      message: "Project logs retrieved successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    const status = error.message === "Project not found" ? 404 : 400;
+    res.status(status).json({
+      message: error.message || "Failed to fetch project logs",
     });
   }
 };
