@@ -6,6 +6,7 @@ import projectRouter from "./routes/project.routes.js";
 import endpointRouter from "./routes/endpoint.routes.js";
 import logRouter from "./routes/logs.routes.js";
 import statsRouter from "./routes/stats.routes.js";
+import { monitorMiddleware } from "./middlewares/monitor.middleware.js";
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(monitorMiddleware);
 
 app.use("/api/auth", authRouter);
 app.use("/api/projects", projectRouter);
