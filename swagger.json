@@ -1,0 +1,646 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PulseTrace API",
+    "version": "1.0.0",
+    "description": "API documentation for the PulseTrace monitoring and observability backend."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your developer dashboard JWT token."
+      },
+      "ApiKeyAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Enter the project's secret API Key. Exclude 'Bearer ' prefix, just write the key value."
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "userId": { "type": "string", "format": "uuid" },
+          "apiKeys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "Endpoint": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+          "projectId": { "type": "string", "format": "uuid" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ApiLog": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "statusCode": { "type": "integer" },
+          "responseTime": { "type": "integer", "description": "Response latency in milliseconds" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "endpointId": { "type": "string", "format": "uuid" },
+          "endpoint": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "path": { "type": "string" },
+              "method": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register a new user",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "token": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad Request" },
+          "409": { "description": "User already exists" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Log in an existing user",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "token": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid credentials" },
+          "400": { "description": "Bad Request" }
+        }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "summary": "List all projects for the authenticated user",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Projects retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "projects": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Project" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "post": {
+        "summary": "Create a new project",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Project created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "project": { "$ref": "#/components/schemas/Project" },
+                    "apiKey": { "type": "string", "description": "The secret API key for telemetry" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" },
+          "409": { "description": "Project with the same name already exists" }
+        }
+      }
+    },
+    "/api/projects/{id}": {
+      "get": {
+        "summary": "Get a project by ID",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Project ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "project": { "$ref": "#/components/schemas/Project" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Project not found" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a project by ID",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Project ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "project": { "$ref": "#/components/schemas/Project" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Project not found" }
+        }
+      }
+    },
+    "/api/projects/{id}/logs": {
+      "get": {
+        "summary": "Get paginated raw activity logs for a project",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Project ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project logs retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "logs": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/ApiLog" }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "total": { "type": "integer" },
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Project not found" }
+        }
+      }
+    },
+    "/api/projects/{projectId}/stats": {
+      "get": {
+        "summary": "Get aggregated stats and endpoint performance reports for a project",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Project ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project stats retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "totalRequests": { "type": "integer" },
+                        "failedRequests": { "type": "integer" },
+                        "successRate": { "type": "number", "format": "float" },
+                        "chartData": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": { "type": "string" },
+                              "total": { "type": "integer" },
+                              "failed": { "type": "integer" },
+                              "successful": { "type": "integer" }
+                            }
+                          }
+                        },
+                        "endpointStats": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string", "format": "uuid" },
+                              "name": { "type": "string" },
+                              "path": { "type": "string" },
+                              "method": { "type": "string" },
+                              "totalRequests": { "type": "integer" },
+                              "failedRequests": { "type": "integer" },
+                              "successRate": { "type": "number", "format": "float" },
+                              "avgResponseTime": { "type": "integer" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Project not found" }
+        }
+      }
+    },
+    "/api/projects/{projectId}/endpoints": {
+      "get": {
+        "summary": "List all registered endpoints under a project",
+        "tags": ["Endpoints"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Project ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoints retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "endpoints": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Endpoint" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Project not found" }
+        }
+      },
+      "post": {
+        "summary": "Register a new monitored endpoint in a project",
+        "tags": ["Endpoints"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Project ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "path", "method"],
+                "properties": {
+                  "name": { "type": "string", "description": "Friendly name of the endpoint" },
+                  "path": { "type": "string", "description": "Express router matching template path, e.g. /auth/login" },
+                  "method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Endpoint created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "endpoint": { "$ref": "#/components/schemas/Endpoint" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Project not found" },
+          "409": { "description": "Endpoint already exists" }
+        }
+      }
+    },
+    "/api/projects/{projectId}/endpoints/{endpointId}": {
+      "get": {
+        "summary": "Get a specific endpoint's details",
+        "tags": ["Endpoints"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Project ID"
+          },
+          {
+            "name": "endpointId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Endpoint ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "endpoint": { "$ref": "#/components/schemas/Endpoint" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Endpoint not found" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a monitored endpoint",
+        "tags": ["Endpoints"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Project ID"
+          },
+          {
+            "name": "endpointId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Endpoint ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "endpoint": { "$ref": "#/components/schemas/Endpoint" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Endpoint not found" }
+        }
+      }
+    },
+    "/api/logs": {
+      "post": {
+        "summary": "Submit a single HTTP telemetry log",
+        "description": "Called by client SDK middlewares to push request processing logs to PulseTrace.",
+        "tags": ["Telemetry Ingestion"],
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["endpointId", "statusCode", "responseTime"],
+                "properties": {
+                  "endpointId": { "type": "string", "format": "uuid" },
+                  "statusCode": { "type": "integer" },
+                  "responseTime": { "type": "integer", "description": "Latency in milliseconds" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Log recorded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized / Invalid API Key" },
+          "404": { "description": "Endpoint not found" }
+        }
+      }
+    }
+  }
+}

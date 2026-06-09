@@ -36,8 +36,8 @@ async function getSelfProjectId(): Promise<string | null> {
 export const monitorMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     console.log(`[Monitor] Incoming: ${req.method} ${req.path}`);
     // 1. Exclude the logging endpoint itself to prevent infinite loops
-    // Also exclude any basic root health check or favicon requests
-    if (req.path === "/api/logs" || req.path === "/favicon.ico" || req.path === "/") {
+    // Also exclude Swagger UI docs, basic root health checks, or favicon requests
+    if (req.path.startsWith("/api-docs") || req.path === "/api/logs" || req.path === "/favicon.ico" || req.path === "/") {
         console.log(`[Monitor] Skipping path: ${req.path}`);
         return next();
     }
