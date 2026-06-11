@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "PulseTrace API",
+    "title": "RequestLens API",
     "version": "1.0.0",
-    "description": "API documentation for the PulseTrace monitoring and observability backend."
+    "description": "API documentation for the RequestLens monitoring and observability backend."
   },
   "servers": [
     {
@@ -603,7 +603,7 @@
     "/api/logs": {
       "post": {
         "summary": "Submit a single HTTP telemetry log",
-        "description": "Called by client SDK middlewares to push request processing logs to PulseTrace.",
+        "description": "Called by client SDK middlewares to push request processing logs to RequestLens.",
         "tags": ["Telemetry Ingestion"],
         "security": [{ "ApiKeyAuth": [] }],
         "requestBody": {

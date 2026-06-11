@@ -34,7 +34,7 @@ app.use("/api/projects", statsRouter);
 app.use("/api/logs", logRouter);
 
 app.get("/", (req, res) => {
-  res.send("PulseTrace API is running 🚀");
+  res.send("RequestLens API is running 🚀");
 });
 
 export default app;
