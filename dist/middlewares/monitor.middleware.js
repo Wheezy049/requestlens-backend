@@ -1,4 +1,5 @@
 import { prisma } from "../utils/prisma.js";
+import { emitNewLog } from "../utils/socket.js";
 // Cache the resolved projectId in memory to avoid database query overhead on every request
 let cachedProjectId = null;
 // Helper to look up Project ID associated with the Self-Monitoring API Key
@@ -31,9 +32,12 @@ async function getSelfProjectId() {
 }
 export const monitorMiddleware = async (req, res, next) => {
     console.log(`[Monitor] Incoming: ${req.method} ${req.path}`);
-    // 1. Exclude the logging endpoint itself to prevent infinite loops
-    // Also exclude Swagger UI docs, basic root health checks, or favicon requests
-    if (req.path.startsWith("/api-docs") || req.path === "/api/logs" || req.path === "/favicon.ico" || req.path === "/") {
+    if (req.path.startsWith("/api-docs") ||
+        req.path.startsWith("/api/projects") ||
+        req.path.startsWith("/api/auth") ||
+        req.path === "/api/logs" ||
+        req.path === "/favicon.ico" ||
+        req.path === "/") {
         console.log(`[Monitor] Skipping path: ${req.path}`);
         return next();
     }
@@ -97,13 +101,24 @@ export const monitorMiddleware = async (req, res, next) => {
                 });
             }
             // Create log record
-            await prisma.apiLog.create({
+            const logRecord = await prisma.apiLog.create({
                 data: {
                     endpointId: endpoint.id,
                     statusCode: res.statusCode,
                     responseTime: duration,
                 },
+                include: {
+                    endpoint: {
+                        select: {
+                            name: true,
+                            path: true,
+                            method: true,
+                        }
+                    }
+                }
             });
+            // Emit the log in real-time via WebSockets
+            emitNewLog(projectId, logRecord);
         }
         catch (error) {
             console.error("Self-monitoring error: Failed to record telemetry log", error);

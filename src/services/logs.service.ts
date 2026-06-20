@@ -1,4 +1,5 @@
 import { prisma } from "../utils/prisma.js";
+import { emitNewLog } from "../utils/socket.js";
 
 export const logResponse = async (endpointId: string, projectId: string, statusCode: number, responseTime: number) => {
 
@@ -13,11 +14,24 @@ export const logResponse = async (endpointId: string, projectId: string, statusC
         throw new Error("Endpoint not found or does not belong to your project");
     }
 
-    return await prisma.apiLog.create({
+    const log = await prisma.apiLog.create({
         data: {
             endpointId,
             statusCode,
             responseTime,
+        },
+        include: {
+            endpoint: {
+                select: {
+                    name: true,
+                    path: true,
+                    method: true,
+                }
+            }
         }
-    })
+    });
+
+    emitNewLog(projectId, log);
+
+    return log;
 }
