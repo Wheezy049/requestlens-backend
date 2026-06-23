@@ -29,6 +29,7 @@ model Project {
 
   endpoints Endpoint[]
   apiKeys   ApiKey[]
+  alertRules AlertRule[]
 
   @@index([userId])
 }
@@ -78,4 +79,35 @@ enum HttpMethod {
   PUT
   PATCH
   DELETE
+}
+
+model AlertRule {
+  id                  String   @id @default(uuid())
+  name                String
+  thresholdPercentage Float    // e.g. 5.0 for 5%
+  windowMinutes       Int      @default(5)
+  cooldownMinutes     Int      @default(30)
+  minRequests         Int      @default(10)
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  logs AlertLog[]
+
+  @@index([projectId])
+}
+
+model AlertLog {
+  id          String   @id @default(uuid())
+  errorRate   Float
+  totalRequests Int
+  triggeredAt DateTime @default(now())
+
+  alertRuleId String
+  alertRule   AlertRule @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
+
+  @@index([alertRuleId])
 }

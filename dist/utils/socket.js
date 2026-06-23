@@ -1,7 +1,6 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { prisma } from "./prisma.js";
-const JWT_SECRET = process.env.JWT_SECRET || "secret";
 let io = null;
 export function initSocket(server) {
     io = new Server(server, {
@@ -17,7 +16,8 @@ export function initSocket(server) {
             return next(new Error("Authentication error: No token provided"));
         }
         try {
-            const decoded = jwt.verify(token, JWT_SECRET);
+            const secret = process.env.JWT_SECRET || "secret";
+            const decoded = jwt.verify(token, secret);
             socket.data.userId = decoded.userId;
             next();
         }

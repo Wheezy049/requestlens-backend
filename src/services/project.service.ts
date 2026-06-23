@@ -32,7 +32,18 @@ export const createProject = async (userId: string, name: string, description: s
             projectId: project.id,
             key: apiKeyValue,
         }
-     })
+     });
+
+     await prisma.alertRule.create({
+         data: {
+             projectId: project.id,
+             name: "Default 5xx Error Alert",
+             thresholdPercentage: 5.0,
+             windowMinutes: 5,
+             cooldownMinutes: 30,
+             minRequests: 10
+         }
+     });
 
     return {
         project,

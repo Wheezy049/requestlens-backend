@@ -3,8 +3,6 @@ import http from "http";
 import jwt from "jsonwebtoken";
 import { prisma } from "./prisma.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret";
-
 let io: Server | null = null;
 
 export function initSocket(server: http.Server) {
@@ -23,7 +21,8 @@ export function initSocket(server: http.Server) {
     }
 
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+      const secret = process.env.JWT_SECRET || "secret";
+      const decoded = jwt.verify(token, secret) as { userId: string };
       socket.data.userId = decoded.userId;
       next();
     } catch (err) {

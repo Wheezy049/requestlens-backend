@@ -1,5 +1,6 @@
 import { prisma } from "../utils/prisma.js";
 import { emitNewLog } from "../utils/socket.js";
+import { evaluateAlerts } from "./alert.service.js";
 
 export const logResponse = async (endpointId: string, projectId: string, statusCode: number, responseTime: number) => {
 
@@ -32,6 +33,11 @@ export const logResponse = async (endpointId: string, projectId: string, statusC
     });
 
     emitNewLog(projectId, log);
+
+    // Evaluate alerts asynchronously to prevent blocking log ingestion
+    evaluateAlerts(projectId).catch((err) => {
+        console.error(`[Alerts] Error in async evaluateAlerts for project ${projectId}:`, err);
+    });
 
     return log;
 }

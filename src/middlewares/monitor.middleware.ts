@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../utils/prisma.js";
 import { HttpMethod } from "@prisma/client";
 import { emitNewLog } from "../utils/socket.js";
+import { evaluateAlerts } from "../services/alert.service.js";
 
 // Cache the resolved projectId in memory to avoid database query overhead on every request
 let cachedProjectId: string | null = null;
@@ -129,6 +130,11 @@ export const monitorMiddleware = async (req: Request, res: Response, next: NextF
 
             // Emit the log in real-time via WebSockets
             emitNewLog(projectId, logRecord);
+
+            // Check if alert rules are breached
+            evaluateAlerts(projectId).catch((err) => {
+                console.error(`[Alerts] Error in async evaluateAlerts for project ${projectId}:`, err);
+            });
 
         } catch (error) {
             console.error("Self-monitoring error: Failed to record telemetry log", error);

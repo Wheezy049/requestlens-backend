@@ -1,6 +1,8 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
@@ -9,12 +11,11 @@ import projectRouter from "./routes/project.routes.js";
 import endpointRouter from "./routes/endpoint.routes.js";
 import logRouter from "./routes/logs.routes.js";
 import statsRouter from "./routes/stats.routes.js";
+import alertRouter from "./routes/alert.routes.js";
 import { monitorMiddleware } from "./middlewares/monitor.middleware.js";
 
 const swaggerPath = path.join(process.cwd(), "swagger.json");
 const swaggerDocument = JSON.parse(fs.readFileSync(swaggerPath, "utf8"));
-
-dotenv.config();
 
 const app = express();
 
@@ -28,6 +29,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/projects", projectRouter);
 app.use("/api/projects", endpointRouter);
 app.use("/api/projects", statsRouter);
+// we use mergeparams in alert router cos params is directly called in parent router
+app.use("/api/projects/:projectId/alerts", alertRouter);
 app.use("/api/logs", logRouter);
 
 app.get("/", (req, res) => {

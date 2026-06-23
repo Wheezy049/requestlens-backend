@@ -1,5 +1,6 @@
 import { prisma } from "../utils/prisma.js";
 import { emitNewLog } from "../utils/socket.js";
+import { evaluateAlerts } from "./alert.service.js";
 export const logResponse = async (endpointId, projectId, statusCode, responseTime) => {
     const endpoint = await prisma.endpoint.findFirst({
         where: {
@@ -27,5 +28,9 @@ export const logResponse = async (endpointId, projectId, statusCode, responseTim
         }
     });
     emitNewLog(projectId, log);
+    // Evaluate alerts asynchronously to prevent blocking log ingestion
+    evaluateAlerts(projectId).catch((err) => {
+        console.error(`[Alerts] Error in async evaluateAlerts for project ${projectId}:`, err);
+    });
     return log;
 };
