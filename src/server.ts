@@ -1,6 +1,7 @@
 import http from "http";
 import app from "./app.js";
 import { initSocket } from "./utils/socket.js";
+import "./queues/alertWorker.js"; // Initialize BullMQ background worker
 
 const PORT = process.env.PORT || 5000;
 
