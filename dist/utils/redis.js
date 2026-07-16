@@ -1,5 +1,5 @@
 import { Redis } from "ioredis";
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const REDIS_URL = process.env.REDIS_URL || "";
 console.log(`[Redis] Initializing connection to: ${REDIS_URL}`);
 export const redisConnection = new Redis(REDIS_URL, {
     maxRetriesPerRequest: null, // Required by BullMQ workers and queues

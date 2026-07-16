@@ -1,4 +1,4 @@
-import { registerUser, loginUser } from "../services/auth.service.js";
+import { registerUser, loginUser, loginWithGoogleUser } from "../services/auth.service.js";
 export const register = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -29,5 +29,23 @@ export const login = async (req, res) => {
     catch (error) {
         const status = error.message === "Invalid credentials" ? 401 : 400;
         res.status(status).json({ message: error.message });
+    }
+};
+export const googleLogin = async (req, res) => {
+    try {
+        const { idToken } = req.body;
+        if (!idToken) {
+            return res.status(400).json({ message: "Google ID Token is required" });
+        }
+        const { user, token } = await loginWithGoogleUser(idToken);
+        const { password: _, ...safeUser } = user;
+        res.status(200).json({
+            message: "Google login successful",
+            user: safeUser,
+            token,
+        });
+    }
+    catch (error) {
+        res.status(400).json({ message: error.message || "Google authentication failed" });
     }
 };
